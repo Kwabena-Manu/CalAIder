@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Event Extractor – Prompt API</title>
+  <style>
+    body { font: 14px/1.45 system-ui, sans-serif; margin: 24px; }
+    textarea { width: 100%; height: 220px; }
+    pre { background: #111; color: #eee; padding: 12px; border-radius: 8px; overflow: auto; }
+    button { padding: 10px 16px; border-radius: 8px; border: 0; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Event Extractor (Chrome Prompt API)</h1>
+  <p>Paste some event-ish text and click “Extract”.</p>
+
+  <textarea id="txt" placeholder="Paste text here…"></textarea>
+  <div style="margin: 12px 0;">
+    <button id="btn">Extract</button>
+    <progress id="dl" hidden value="0" max="1" style="vertical-align: middle;"></progress>
+    <span id="status" style="margin-left:8px;color:#666;"></span>
+  </div>
+
+  <pre id="out">{ "events": [] }</pre>
+
+  <script type="module">
+    import { extractEvents, ensureModelReady, attachDownloadMonitor } from './prompt_ai.js';
+
+    const $ = (id) => document.getElementById(id);
+    const statusEl = $('status');
+    const prog = $('dl');
+
+    // Optional: show model download progress if needed.
+    attachDownloadMonitor({
+      onStart() { prog.hidden = false; statusEl.textContent = 'Downloading model…'; },
+      onProgress(v) { prog.value = v; },
+      onDone() { prog.hidden = true; statusEl.textContent = 'Model ready.'; },
+    });
+
+    $('btn').addEventListener('click', async () => {
+      const input = $('txt').value.trim();
+      $('out').textContent = 'Working…';
+      try {
+        await ensureModelReady();      // checks availability + creates a real session
+        const data = await extractEvents(input);
+        $('out').textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        const msg = err?.message || String(err);
+        $('out').textContent = 'Error: ' + msg;
+        if (msg.includes('unavailable')) {
+          statusEl.innerHTML =
+            'Prompt API unavailable. Use Chrome 137+ desktop, ensure hardware/space, then try again.';
+        }
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
