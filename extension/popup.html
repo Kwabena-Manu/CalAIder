@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CalAIder</title>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        margin: 0;
+        padding: 20px;
+        width: 320px;
+        background: #f7f9fb;
+        color: #333;
+      }
+
+      h1 {
+        font-size: 18px;
+        text-align: center;
+        color: #1a73e8;
+        margin-bottom: 16px;
+      }
+
+      button {
+        width: 100%;
+        background: #1a73e8;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+
+      button:hover:not(:disabled) {
+        background: #0c57c9;
+      }
+
+      #status {
+        text-align: center;
+        font-size: 13px;
+        margin-top: 10px;
+        color: #666;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin-top: 20px;
+      }
+
+      li {
+        background: white;
+        padding: 10px 12px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      li strong {
+        display: block;
+        color: #222;
+      }
+
+      li small {
+        color: #666;
+        font-size: 12px;
+      }
+
+      .loading {
+        text-align: center;
+        font-size: 14px;
+        color: #555;
+      }
+
+      .empty {
+        text-align: center;
+        font-size: 13px;
+        color: #999;
+      }
+    </style>
+    <!-- Add to your popup.html <head> -->
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <h1>CalAIder</h1>
+    <button id="checkSlots">
+      <span class="material-icons" style="vertical-align: middle;">event_available</span>Check Availability</button>
+    <div id="status"></div>
+    <ul id="events"></ul>
+    <script src="popup.js"></script>
+  </body>
+</html>
