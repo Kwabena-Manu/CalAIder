@@ -1,59 +1,99 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="utf-8" />
-  <title>Event Extractor – Prompt API</title>
-  <style>
-    body { font: 14px/1.45 system-ui, sans-serif; margin: 24px; }
-    textarea { width: 100%; height: 220px; }
-    pre { background: #111; color: #eee; padding: 12px; border-radius: 8px; overflow: auto; }
-    button { padding: 10px 16px; border-radius: 8px; border: 0; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <h1>Event Extractor (Chrome Prompt API)</h1>
-  <p>Paste some event-ish text and click “Extract”.</p>
+  <head>
+    <meta charset="utf-8" />
+    <title>Event Extractor – Prompt API</title>
+    <style>
+      body { font: 14px/1.45 system-ui, sans-serif; margin: 24px; }
+      textarea { width: 100%; height: 220px; }
+      pre { background: #111; color: #eee; padding: 12px; border-radius: 8px; overflow: auto; }
+      button { padding: 10px 16px; border-radius: 8px; border: 0; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <h1>Event Extractor (Chrome Prompt API)</h1>
+    <p>Paste some event-ish text and click “Extract”.</p>
 
-  <textarea id="txt" placeholder="Paste text here…"></textarea>
-  <div style="margin: 12px 0;">
-    <button id="btn">Extract</button>
-    <progress id="dl" hidden value="0" max="1" style="vertical-align: middle;"></progress>
-    <span id="status" style="margin-left:8px;color:#666;"></span>
-  </div>
+    <textarea id="txt" placeholder="Paste text here…"></textarea>
+    <div style="margin: 12px 0;">
+      <button id="btn">Extract</button>
+      <progress id="dl" hidden value="0" max="1" style="vertical-align: middle;"></progress>
+      <span id="status" style="margin-left:8px;color:#666;"></span>
+      <span id="status" style="margin-left:8px;color:#666;"></span>
+      <span id="timing" style="margin-left:8px;color:#666;"></span>
+    </div>
 
-  <pre id="out">{ "events": [] }</pre>
+    <pre id="out">{ "events": [] }</pre>
 
-  <script type="module">
-    import { extractEvents, ensureModelReady, attachDownloadMonitor } from './prompt_ai.js';
+    <!-- index.html (only the <script type="module"> block changes) -->
+    <script type="module">
+      import { extractEvents, ensureModelReady, attachDownloadMonitor } from './prompt_ai.js';
 
-    const $ = (id) => document.getElementById(id);
-    const statusEl = $('status');
-    const prog = $('dl');
+      const $ = (id) => document.getElementById(id);
+      const statusEl = $('status');
+      const prog = $('dl');
+      const btn = $('btn');
+      const timingEl = $('timing'); 
 
-    // Optional: show model download progress if needed.
-    attachDownloadMonitor({
-      onStart() { prog.hidden = false; statusEl.textContent = 'Downloading model…'; },
-      onProgress(v) { prog.value = v; },
-      onDone() { prog.hidden = true; statusEl.textContent = 'Model ready.'; },
-    });
+      attachDownloadMonitor({
+        onStart() { 
+          prog.hidden = false; 
+          statusEl.textContent = 'Downloading model…'; 
+          btn.disabled = true; 
+          timingEl.textContent = ''; // clear any prior timing
+        },
+        onProgress(v) { prog.value = v; },
+        onDone() { 
+          prog.hidden = true; 
+          statusEl.textContent = 'Model ready.'; 
+          btn.disabled = false; 
+        },
+      });
 
-    $('btn').addEventListener('click', async () => {
-      const input = $('txt').value.trim();
-      $('out').textContent = 'Working…';
-      try {
-        await ensureModelReady();      // checks availability + creates a real session
-        const data = await extractEvents(input);
-        $('out').textContent = JSON.stringify(data, null, 2);
-      } catch (err) {
-        const msg = err?.message || String(err);
-        $('out').textContent = 'Error: ' + msg;
-        if (msg.includes('unavailable')) {
-          statusEl.innerHTML =
-            'Prompt API unavailable. Use Chrome 137+ desktop, ensure hardware/space, then try again.';
+      // Prewarm on page load so the first click is instant if Chrome supports on-device
+      window.addEventListener('DOMContentLoaded', async () => {
+        try {
+          btn.disabled = true;
+          const t0 = performance.now(); // measure prewarm (model load/compile)
+          await ensureModelReady();     // original prewarm call (no change to behavior):contentReference[oaicite:1]{index=1}
+          const ms = performance.now() - t0;
+          statusEl.textContent = 'Model ready.';
+          timingEl.textContent = `Warm-up: ${(ms/1000).toFixed(2)}s`;
+        } catch (err) {
+          statusEl.textContent = (err?.message || 'Prompt API unavailable.');
+          btn.disabled = false; // let them try; your error handler will show a message
+          console.error(err);
         }
-        console.error(err);
-      }
-    });
-  </script>
-</body>
+      });
+
+      // Click handler: measure *inference* latency only (from prompt call to response)
+      $('btn').addEventListener('click', async () => {
+        const input = $('txt').value.trim();
+        $('out').textContent = 'Working…';
+        timingEl.textContent = ''; // clear prior timing
+
+        try {
+          // Start timing *just before* the model call to measure inference latency.
+          const t0 = performance.now();
+          const data = await extractEvents(input);  // original call path:contentReference[oaicite:2]{index=2}
+          const t1 = performance.now();
+
+          // Render results
+          $('out').textContent = JSON.stringify(data, null, 2);
+
+          // Show timing in seconds with 2 decimals
+          const inferMs = t1 - t0;
+          timingEl.textContent = `Inference: ${(inferMs/1000).toFixed(2)}s`;
+        } catch (err) {
+          const msg = err?.message || String(err);
+          $('out').textContent = 'Error: ' + msg;
+          if (msg.includes('unavailable')) {
+            statusEl.innerHTML =
+              'Prompt API unavailable. Use Chrome 137+ desktop, ensure hardware/space, then try again.';
+          }
+          console.error(err);
+        }
+      });
+    </script>
+  </body>
 </html>

@@ -1,15 +1,15 @@
+// prompt_ai.js
 import { GUIDANCE_PROMPT } from "./guidancePrompt.js";
-import { EVENT_SCHEMA, getSession } from "./utils.js";
+import { EVENT_SCHEMA, getSession, prewarmModel } from "./utils.js";
 
-
+// --- Keeps your download monitor support for model loading feedback ---
 let _monitorHandlers = null;
 export function attachDownloadMonitor(h) { _monitorHandlers = h; }
 
-// Checks for the model's availability
+// --- Checks for the model's availability and preloads it ---
 export async function ensureModelReady() {
-    await getSession(_monitorHandlers);
+    await prewarmModel(_monitorHandlers);
 }
-
 
 /**
  * Extracts event info (title, date, time, place, etc.) from a web page’s text.
@@ -22,54 +22,56 @@ export async function ensureModelReady() {
  * }>>}>}
  */
 export async function extractEvents(pageText) {
-    if (typeof pageText !== 'string' || !pageText.trim()) {
+    if (typeof pageText !== "string" || !pageText.trim()) {
         return { events: [] };
     }
 
+    // --- Get an existing (cached) model session ---
     const session = await getSession();
 
     const messages = [
-        { role: 'system', content: GUIDANCE_PROMPT },
-        { role: 'user', content: `Extract events from the following text:\n\n${pageText}` }
+        { role: "system", content: GUIDANCE_PROMPT },
+        { role: "user", content: `Extract events from the following text:\n\n${pageText}` }
     ];
 
     let raw;
     try {
+        // --- Call the local model to generate JSON per EVENT_SCHEMA ---
         raw = await session.prompt(messages, {
             responseConstraint: EVENT_SCHEMA,
             // Keeps the schema enforced without injecting it into the model’s input.
             omitResponseConstraintInput: true
         });
     } catch (e) {
-        // If the model fails to return valid JSON, just return an empty result
-        console.warn('[prompt_ai] prompt() error:', e);
+        // --- If model fails to return valid JSON, return empty result ---
+        console.warn("[prompt_ai] prompt() error:", e);
         return { events: [] };
     }
 
     try {
         const data = JSON.parse(raw);
-        // Checking if data is not in the expected format
-        if (!data || typeof data !== 'object' || !Array.isArray(data.events)) {
+        // --- Sanity check: ensure result matches expected structure ---
+        if (!data || typeof data !== "object" || !Array.isArray(data.events)) {
             return { events: [] };
         }
         return data;
     } catch (e) {
-        console.warn('[prompt_ai] JSON parse error:', e, 'raw=', raw);
+        console.warn("[prompt_ai] JSON parse error:", e, "raw=", raw);
         return { events: [] };
     }
 }
 
 /**
  * Combines warm-up and extraction in one call.
+ * Equivalent to: await ensureModelReady(); then await extractEvents(text);
  */
 export async function extractEventsReady(pageText) {
     await ensureModelReady();
     return extractEvents(pageText);
 }
 
-// Basic wrapper around Chrome’s Prompt API for extracting events.
-// Example:
+// --- Example usage ---
 // import { extractEvents, ensureModelReady } from './prompt_ai.js';
 // await ensureModelReady();
 // const data = await extractEvents(myPageText);
-// console.log(data); // -> { events: [ { title, startDate, startTime, endDate, endTime, timezone, venue, address, city, country, url, notes } ] }
+// console.log(data);
