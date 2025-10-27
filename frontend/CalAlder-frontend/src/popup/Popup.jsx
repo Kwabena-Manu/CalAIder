@@ -29,6 +29,7 @@ import IconButton from '@mui/material/IconButton';
 import Snackbar from '@mui/material/Snackbar';
 import CloseIcon from '@mui/icons-material/Close';
 import Slide from '@mui/material/Slide';
+import { useGoogleAPIContext } from '../context/GoogleAPIContext';
 
 
 function SlideTransition(props) {
@@ -41,6 +42,20 @@ const Popup = (props) => {
     const [snackBarOpen, setSnackBarOpen] = useState(false);
     const [snackBarMessage, setSnackBarMessage] = useState('');
 
+    // Instantiating the Google API Context
+    const googleApiContext = useGoogleAPIContext();
+
+    // Function to handle User Login 
+    const handleUserLogin = async () => {
+
+        const token = await googleApiContext.signIn();
+        await googleApiContext.fetchUserInfo(token);
+        var upcomingUserEvents = await googleApiContext.getUpComingEvents();
+        console.log("Upcoming Events: ", upcomingUserEvents);
+    }
+    console.log("User info is: ", googleApiContext.user)
+
+    // Function to  handle SnackBar close event
     const handleSnackBarClose = (event, reason) => {
         if (reason === 'clickaway') {
             return;
@@ -49,11 +64,14 @@ const Popup = (props) => {
         setSnackBarOpen(false);
     };
 
+
+    // Function to handle add event button click event
     const handleAddEventButtonClick = (someMessage) => {
         setSnackBarOpen(true);
         setSnackBarMessage(someMessage);
     };
 
+    // Function to handle delete event button click event
     const handleDeleteEventButtonClick = (someMessage) => {
         setSnackBarOpen(true);
         setSnackBarMessage(someMessage);
@@ -101,9 +119,24 @@ const Popup = (props) => {
                             </ListItem>
                             <Divider />
                             <ListItem className='tw:bg-stone-100'>
-                                <ListItemText primary="login" className='tw:text-right tw:mx-2' />
-                                <Divider orientation='vertical' variant='middle' flexItem />
-                                <ListItemText primary="signup" className='tw:text-left tw:mx-2' />
+                                <ListItemText primary=
+                                    {
+                                        <>
+                                            {googleApiContext.token && googleApiContext.user ?
+                                                (
+                                                    <div>
+                                                        Hello, {googleApiContext.user.name}
+                                                    </div>
+                                                )
+                                                :
+                                                (
+                                                    <Button variant='outlined' onClick={handleUserLogin}>Sign in</Button>
+                                                )}
+
+                                        </>
+                                    } className='tw:text-center tw:mx-2' />
+                                {/* <Divider orientation='vertical' variant='middle' flexItem />
+                                <ListItemText primary="signup" className='tw:text-left tw:mx-2' /> */}
                             </ListItem>
 
                             <Divider />
@@ -126,13 +159,21 @@ const Popup = (props) => {
                                 testData.map((item, index, array) => (
                                     <React.Fragment key={item.title}>
                                         <div className='tw:pl-4 tw:hover:bg-stone-100 tw:flex tw:items-center tw:justify-between tw:group'>
-                                            <ListItemText className='tw:w-[65%]' primary={item.title} secondary={
-                                                <>
-                                                    <Typography>
-                                                        {item.secondary}
-                                                    </Typography>
-                                                </>
-                                            } />
+                                            <ListItemText className='tw:w-[65%]'
+                                                primary={
+                                                    <>
+                                                        <Typography className='tw:!font-bold tw:text-zinc-600'>
+                                                            {item.title}
+                                                        </Typography>
+                                                    </>
+                                                }
+                                                secondary={
+                                                    <>
+                                                        <span className='tw:text-sm'>
+                                                            {item.secondary}
+                                                        </span>
+                                                    </>
+                                                } />
                                             <Divider orientation='vertical' variant='middle' />
                                             {/* Use group-hover/group-focus so the icons reveal when the parent ListItemButton is hovered/focused.
                                                 Note: element can't receive hover when it's `invisible`, so we show it via the parent. */}

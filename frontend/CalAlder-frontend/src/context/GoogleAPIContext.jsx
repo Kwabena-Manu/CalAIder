@@ -33,6 +33,7 @@ const GoogleAPIContextProvider = ({ children }) => {
 
         const data = await res.json();
         setUser(data);
+        console.log(data);
     }, []);
 
     // Calendar API request
@@ -51,10 +52,50 @@ const GoogleAPIContextProvider = ({ children }) => {
     }, [token]);
 
 
-    // Save token to Chrome storage for persistence
+    // Load token from storage on mount (Chrome extension or localStorage fallback)
     useEffect(() => {
-        if (token) chome.storage.sync.set({ token });
+        try {
+            if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+                chrome.storage.sync.get(['token', 'user'], (result) => {
+                    if (result && result.token) setToken(result.token);
+                    if (result && result.user) setUser(result.user);
+                });
+            } else {
+                const savedToken = localStorage.getItem('token');
+                if (savedToken) setToken(savedToken);
+
+                const savedUser = localStorage.getItem('user');
+                if (savedUser) setToken(savedUser);
+
+            }
+        } catch (err) {
+            // If any unexpected error occurs, fall back to localStorage
+            const saved = localStorage.getItem('token');
+            if (saved) setToken(saved);
+        }
+    }, []);
+
+    // Save token to Chrome storage (if available) and also mirror to localStorage as a fallback
+    useEffect(() => {
+        if (!token) return;
+        try {
+            if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+                chrome.storage.sync.set({ token });
+                chrome.storage.sync.set({ user })
+            }
+        } catch (err) {
+            // ignore and fall through to localStorage
+        }
+        try {
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', user);
+        } catch (e) {
+            // ignore localStorage errors (e.g., in private mode)
+        }
     }, [token]);
+
+
+    // Testing User Information 
 
 
 
