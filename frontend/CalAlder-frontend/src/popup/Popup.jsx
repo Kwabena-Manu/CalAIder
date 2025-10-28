@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import reactLogo from '../assets/react.svg';
 import viteLogo from '/vite.svg';
-import './Popup.css';
+import { mockEvents } from './mockData';
+import EditPaper from '../components/EditPaper';
 
 
 // testing materialUI
@@ -41,6 +42,10 @@ const Popup = (props) => {
     const [count, setCount] = useState(0);
     const [snackBarOpen, setSnackBarOpen] = useState(false);
     const [snackBarMessage, setSnackBarMessage] = useState('');
+    const [editButtonClicked, setEditButtonClicked] = useState(false);
+    const [eventToEdit, setEventToEdit] = useState({});
+    const [eventList, setEventList] = useState([...mockEvents.events]);
+    const [selectedIndex, setSelectedIndex] = useState(null);
 
     // Instantiating the Google API Context
     const googleApiContext = useGoogleAPIContext();
@@ -64,6 +69,13 @@ const Popup = (props) => {
         setSnackBarOpen(false);
     };
 
+    // Function to handle add event button click event
+    const handleEditEventButtonClick = (event, index) => {   
+        console.log(event);
+        setEditButtonClicked(true);
+        setEventToEdit(event);
+        setSelectedIndex(index);
+    };
 
     // Function to handle add event button click event
     const handleAddEventButtonClick = (someMessage) => {
@@ -77,23 +89,19 @@ const Popup = (props) => {
         setSnackBarMessage(someMessage);
     };
 
-    const testData = [
-        { title: "Event 1 ", secondary: "April 1" },
-        { title: "Event 2 ", secondary: "April 1" },
-        { title: "Event 3 ", secondary: "April 1" },
-        { title: "Event 4 ", secondary: "April 1" },
-        { title: "Event 5 ", secondary: "April 1" },
-        { title: "Event 6 ", secondary: "April 1" },
-        { title: "Event 7 ", secondary: "April 1" },
-        { title: "Event 8 ", secondary: "April 1" },
-        { title: "Event 9 ", secondary: "April 1" },
-        { title: "Event 10 ", secondary: "April 1" },
-        { title: "Event 11", secondary: "April 1" },
-        { title: "Event 12 ", secondary: "April 1" },
-        { title: "Event 13 ", secondary: "April 1" },
-        { title: "Event 14", secondary: "April 1" },
+    const handleEditEventSave = (editedEvent) => {
+        setEventList(prev =>
+            prev.map((ev, i) => (i === selectedIndex ? { ...ev, ...editedEvent } : ev))
+        );
+        setEditButtonClicked(false);
+        setSelectedIndex(null);
+    };
 
-    ]
+    const testData = eventList.map(e => ({
+        title: e.title,
+        secondary: `${e.startDate} ${e.startTime ? `• ${e.startTime}` : ''}`
+    }));
+
     const closeSnackBarActionButton = (
         <>
             <IconButton
@@ -152,64 +160,74 @@ const Popup = (props) => {
                             `Events Detected (${testData.length})`
                         )}
                     </div>
-                    <Paper variant='outlined' className='tw:max-h-[350px] tw:h-fit tw:mx-2 tw:overflow-y-auto tw:!pr-2 '>
-                        <List className='tw:my-0 tw:!p-0 tw:mr-4'>
+                    {
+                        editButtonClicked? (
+                            <EditPaper 
+                                eventData={eventToEdit} 
+                                onClose={() => setEditButtonClicked(false)} 
+                                onSave={handleEditEventSave}
+                            />
+                        ) : (
+                            <Paper variant='outlined' className='tw:max-h-[350px] tw:h-fit tw:mx-2 tw:overflow-y-auto tw:!pr-2 '>
+                                <List className='tw:my-0 tw:!p-0 tw:mr-4'>
 
-                            {
-                                testData.map((item, index, array) => (
-                                    <React.Fragment key={item.title}>
-                                        <div className='tw:pl-4 tw:hover:bg-stone-100 tw:flex tw:items-center tw:justify-between tw:group'>
-                                            <ListItemText className='tw:w-[65%]'
-                                                primary={
-                                                    <>
-                                                        <Typography className='tw:!font-bold tw:text-zinc-600'>
-                                                            {item.title}
-                                                        </Typography>
-                                                    </>
-                                                }
-                                                secondary={
-                                                    <>
-                                                        <span className='tw:text-sm'>
-                                                            {item.secondary}
-                                                        </span>
-                                                    </>
-                                                } />
-                                            <Divider orientation='vertical' variant='middle' />
-                                            {/* Use group-hover/group-focus so the icons reveal when the parent ListItemButton is hovered/focused.
-                                                Note: element can't receive hover when it's `invisible`, so we show it via the parent. */}
-                                            <Stack direction="row" spacing={1} className='tw:invisible tw:group-hover:visible tw:group-focus:visible tw:transition-opacity tw:duration-150 tw:opacity-0 tw:group-hover:opacity-100 tw:flex tw:items-center tw:space-x-2'>
-                                                <Tooltip title="Add event to calendar">
-                                                    <IconButton onClick={() => handleAddEventButtonClick("Event added to your calendar!")}>
-                                                        <AddIcon fontSize='small' />
-                                                    </IconButton>
-                                                </Tooltip>
+                                    {
+                                        testData.map((item, index, array) => (
+                                            <React.Fragment key={item.title}>
+                                                <div className='tw:pl-4 tw:hover:bg-stone-100 tw:flex tw:items-center tw:justify-between tw:group'>
+                                                    <ListItemText className='tw:w-[65%]'
+                                                        primary={
+                                                            <>
+                                                                <Typography className='tw:!font-bold tw:text-zinc-600'>
+                                                                    {item.title}
+                                                                </Typography>
+                                                            </>
+                                                        }
+                                                        secondary={
+                                                            <>
+                                                                <span className='tw:text-sm'>
+                                                                    {item.secondary}
+                                                                </span>
+                                                            </>
+                                                        } />
+                                                    <Divider orientation='vertical' variant='middle' />
+                                                    {/* Use group-hover/group-focus so the icons reveal when the parent ListItemButton is hovered/focused.
+                                                        Note: element can't receive hover when it's `invisible`, so we show it via the parent. */}
+                                                    <Stack direction="row" spacing={1} className='tw:invisible tw:group-hover:visible tw:group-focus:visible tw:transition-opacity tw:duration-150 tw:opacity-0 tw:group-hover:opacity-100 tw:flex tw:items-center tw:space-x-2'>
+                                                        <Tooltip title="Add event to calendar">
+                                                            <IconButton onClick={() => handleAddEventButtonClick("Event added to your calendar!")}>
+                                                                <AddIcon fontSize='small' />
+                                                            </IconButton>
+                                                        </Tooltip>
 
-                                                <Tooltip title="Edit event">
-                                                    <IconButton >
+                                                        <Tooltip title="Edit event">
+                                                            <IconButton onClick={() => handleEditEventButtonClick(eventList[index], index)} >
 
-                                                        <EditCalendarIcon fontSize='small' />
-                                                    </IconButton>
-                                                </Tooltip>
+                                                                <EditCalendarIcon fontSize='small' />
+                                                            </IconButton>
+                                                        </Tooltip>
 
 
-                                                <Tooltip title='Delete event'>
-                                                    <IconButton onClick={() => handleDeleteEventButtonClick("Event deleted!")}>
+                                                        <Tooltip title='Delete event'>
+                                                            <IconButton onClick={() => handleDeleteEventButtonClick("Event deleted!")}>
 
-                                                        <DeleteForeverIcon fontSize='small' />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Stack>
-                                        </div>
+                                                                <DeleteForeverIcon fontSize='small' />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </Stack>
+                                                </div>
 
-                                        {index !== array.length - 1 && <Divider />}
+                                                {index !== array.length - 1 && <Divider />}
 
-                                    </React.Fragment>
-                                ))
-                            }
+                                            </React.Fragment>
+                                        ))
+                                    }
 
-                        </List>
+                                </List>
 
-                    </Paper>
+                            </Paper>
+                        )
+                    }
                 </Box>
             </div>
             <AppBar position='fixed' className='tw:!top-auto tw:!bottom-0'>

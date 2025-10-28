@@ -1,0 +1,70 @@
+.edit-paper-container {
+    display: block;
+    height: 350px;
+    padding: 0 15px;
+    border-top: 2px solid #fafafa;
+    overflow-y: scroll;
+    /* background-color: #fafafa; */
+}
+
+.edit-paper-label {
+    color: #282828;
+    font-weight: 500;
+}
+
+.edit-paper-title-input {
+    width: 100%;
+    height: 40px;
+    padding-left: 15px;
+    margin-bottom: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    outline: none;
+}
+
+.edit-paper-date-picker {
+    width: 50%;
+    margin: 10px 0;
+}
+
+.edit-paper-time-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 10px 0;
+}
+
+.edit-paper-time-container > div {
+    width:45%;
+}
+
+.edit-paper-textarea {
+    width: 100%;
+    min-height: 80px;
+    font-size: 14px;
+    padding: 8px 15px;
+    border: 1px solid #e0e0e0;
+    outline: none;
+}
+
+.edit-paper-button-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.edit-paper-button-container > button {
+    cursor: pointer;
+    width: 48%;
+    height: 35px;
+    color: white;
+    font-weight: 500;
+    border-radius: 6px;
+}
+
+#cancel-button {
+    background-color: #e0e0e0;
+}
+#save-button {
+    background-color: #1976d2;
+}
