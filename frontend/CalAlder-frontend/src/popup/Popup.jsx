@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import reactLogo from '../assets/react.svg';
 import viteLogo from '/vite.svg';
-import './Popup.css';
+import { mockEvents } from './mockData';
+import EditPaper from '../components/EditPaper';
+import { formatDate } from '../utils/dateFormatUtils';
 
 
 // testing materialUI
@@ -38,6 +40,7 @@ import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import EventListDisplay from './components/EventListDisplay';
 
 
 
@@ -56,7 +59,7 @@ const TabPanel = (props) => {
             {...other}
         >
             {value === index && (
-                <Box sx={{ p: 3 }}>
+                <Box sx={{ p: 1 }}>
                     <Typography>{children}</Typography>
                 </Box>
             )}
@@ -100,10 +103,10 @@ const Popup = (props) => {
     const profileMenuOpen = Boolean(profileAnchorEl);
 
 
-
-
-
-
+    const [editButtonClicked, setEditButtonClicked] = useState(false);
+    const [eventToEdit, setEventToEdit] = useState({});
+    const [eventList, setEventList] = useState([...mockEvents.events]);
+    const [selectedIndex, setSelectedIndex] = useState(null);
 
     // Instantiating the Google API Context
     const googleApiContext = useGoogleAPIContext();
@@ -129,20 +132,6 @@ const Popup = (props) => {
     }
     console.log("User info is: ", googleApiContext.user)
 
-    // Trigger user events fetch event when the extension is opened
-    useEffect(() => {
-        const fetchEventsIfSignedIn = async () => {
-            if (googleApiContext?.token) {
-                try {
-                    await googleApiContext.getUpComingEvents();
-                } catch (err) {
-                    console.error('Failed to load upcoming events:', err);
-                }
-            }
-        };
-
-        fetchEventsIfSignedIn();
-    }, [googleApiContext?.token]);
 
     // Function to  handle SnackBar close event
     const handleSnackBarClose = (event, reason) => {
@@ -153,6 +142,13 @@ const Popup = (props) => {
         setSnackBarOpen(false);
     };
 
+    // Function to handle add event button click event
+    const handleEditEventButtonClick = (event, index) => {
+        console.log(event);
+        setEditButtonClicked(true);
+        setEventToEdit(event);
+        setSelectedIndex(index);
+    };
 
     // Function to handle add event button click event
     const handleAddEventButtonClick = (someMessage) => {
@@ -170,25 +166,41 @@ const Popup = (props) => {
     // Function to handle changing a tab
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
+        setEditButtonClicked(false);
+
+
     }
 
-    const testData = [
-        { title: "Event 1 ", secondary: "April 1" },
-        { title: "Event 2 ", secondary: "April 1" },
-        { title: "Event 3 ", secondary: "April 1" },
-        { title: "Event 4 ", secondary: "April 1" },
-        { title: "Event 5 ", secondary: "April 1" },
-        { title: "Event 6 ", secondary: "April 1" },
-        { title: "Event 7 ", secondary: "April 1" },
-        { title: "Event 8 ", secondary: "April 1" },
-        { title: "Event 9 ", secondary: "April 1" },
-        { title: "Event 10 ", secondary: "April 1" },
-        { title: "Event 11", secondary: "April 1" },
-        { title: "Event 12 ", secondary: "April 1" },
-        { title: "Event 13 ", secondary: "April 1" },
-        { title: "Event 14", secondary: "April 1" },
+    const handleEditEventSave = (editedEvent) => {
+        setEventList(prev =>
+            prev.map((ev, i) => (i === selectedIndex ? { ...ev, ...editedEvent } : ev))
+        );
+        setEditButtonClicked(false);
+        setSelectedIndex(null);
+    };
 
-    ]
+    const testData = eventList.map(e => ({
+        title: e.title,
+        secondary: `${e.startDate} ${e.startTime ? `• ${e.startTime}` : ''}`
+    }));
+
+
+    const handleDeleteFromPopup = (indexOrId) => {
+        setEventList(prev => {
+            if (!Array.isArray(prev)) return prev;
+            // if index passed (number), remove by index
+            if (typeof indexOrId === 'number') {
+                return prev.filter((_, i) => i !== indexOrId);
+            }
+            // otherwise treat as id
+            return prev.filter(ev => ev.id !== indexOrId);
+        });
+        setSnackBarMessage('Event deleted');
+        setSnackBarOpen(true);
+    };
+
+
+
     const closeSnackBarActionButton = (
         <>
             <IconButton
@@ -202,6 +214,22 @@ const Popup = (props) => {
         </>
     )
 
+
+
+    // Trigger user events fetch event when the extension is opened
+    useEffect(() => {
+        const fetchEventsIfSignedIn = async () => {
+            if (googleApiContext?.token) {
+                try {
+                    await googleApiContext.getUpComingEvents();
+                } catch (err) {
+                    console.error('Failed to load upcoming events:', err);
+                }
+            }
+        };
+
+        fetchEventsIfSignedIn();
+    }, [googleApiContext?.token]);
 
 
 
@@ -268,88 +296,74 @@ const Popup = (props) => {
                 </Box>
 
                 <Box className=" tw:overflow-hidden tw:!px-2">
-                    <div className='tw:my-2 tw:px-4 tw:text-sm'>
-                        {googleApiContext.userEvents != null && googleApiContext.userEvents.length != 0 ? (
-                            `Events Detected (${googleApiContext.userEvents.length})`
+                    <div className='tw:my-2 tw:px-4 tw:text-zinc-600 tw:font-bold tw:text-xs'>
+                        {tabValue === 1 ? (
+                            (googleApiContext?.userEvents?.length > 0) ? (
+                                `Showing (${googleApiContext.userEvents.length}) upcoming events`
+                            ) : (
+                                "No upcoming events"
+                            )
                         ) : (
-                            "No events detected"
+                            (eventList?.length > 0) ? (`Detected (${eventList.length}) events so far`) : ("Detected 3 events on this page")
                         )}
                     </div>
-                    <Paper variant='outlined' className='tw:max-h-[280px] tw:h-fit tw:mx-2 tw:overflow-y-auto'>
-                        <TabPanel value={tabValue} index={0}>
-                            "what is matter"
-                        </TabPanel>
-                        <TabPanel value={tabValue} index={1}>
-
-                            {googleApiContext.userEvents ? (
-
-                                <List className='tw:my-0 tw:!p-0 '>
-                                    {
-                                        googleApiContext.userEvents.map((event, index, array) => (
-
-                                            <React.Fragment key={event.id}>
-                                                <div className=' tw:hover:bg-stone-100 tw:flex tw:items-center tw:justify-between tw:group'>
-                                                    <ListItemText className='tw:pl-1 tw:w-[60%]'
-                                                        primary={
-                                                            <>
-                                                                <Typography className='tw:!font-bold tw:text-zinc-600'>
-                                                                    {event.summary}
-                                                                </Typography>
-                                                            </>
-                                                        }
-                                                        secondary={
-                                                            <>
-                                                                <span className='tw:text-sm'>
-                                                                    {event.start.dateTime}
-                                                                </span>
-                                                            </>
-                                                        } />
-                                                    {/* Use group-hover/group-focus so the icons reveal when the parent ListItemButton is hovered/focused.
-                                                Note: element can't receive hover when it's `invisible`, so we show it via the parent. */}
-                                                    <Stack direction="row" spacing={0.5} className='tw:invisible  tw:group-hover:visible tw:group-focus:visible tw:transition-opacity tw:duration-150 tw:opacity-0 tw:group-hover:opacity-100 tw:flex tw:items-center '>
-                                                        <Tooltip title="Add event to calendar">
-                                                            <IconButton onClick={() => handleAddEventButtonClick("Event added to your calendar!")}>
-                                                                <AddIcon fontSize='small' />
-                                                            </IconButton>
-                                                        </Tooltip>
-
-                                                        <Tooltip title="Edit event">
-                                                            <IconButton >
-
-                                                                <EditCalendarIcon fontSize='small' />
-                                                            </IconButton>
-                                                        </Tooltip>
+                    {
+                        editButtonClicked ? (
+                            <EditPaper
+                                eventData={eventToEdit}
+                                onClose={() => setEditButtonClicked(false)}
+                                onSave={handleEditEventSave}
+                            />
+                        ) : (
+                            <Paper variant='outlined' className='tw:max-h-[350px] tw:h-fit tw:mx-2 tw:overflow-y-auto'>
+                                <TabPanel value={tabValue} index={0}>
+                                    {eventList ? (
+                                        <EventListDisplay events={eventList}
+                                            setEditButtonClicked={setEditButtonClicked}
+                                            setEventToEdit={setEventToEdit}
+                                            setSelectedIndex={setSelectedIndex}
+                                            setSnackBarOpen={setSnackBarOpen}
+                                            setSnackBarMessage={setSnackBarMessage}
+                                            eventsType={'detectedEvents'}
+                                            onDelete={handleDeleteFromPopup}
 
 
-                                                        <Tooltip title='Delete event'>
-                                                            <IconButton onClick={() => handleDeleteEventButtonClick("Event deleted!")}>
+                                        />
+                                    ) : (
+                                        <Typography variant='h5' className='tw:my-auto tw:p-4 tw:text-center tw:mx-auto'>Nothing to see here!</Typography>
 
-                                                                <DeleteForeverIcon fontSize='small' />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                    </Stack>
-                                                </div>
+                                    )}
+                                </TabPanel>
+                                <TabPanel value={tabValue} index={1}>
 
-                                                {index !== array.length - 1 && <Divider />}
+                                    {googleApiContext.userEvents ? (
 
-                                            </React.Fragment>
-                                        ))
+                                        <EventListDisplay events={googleApiContext.userEvents}
+                                            setEditButtonClicked={setEditButtonClicked}
+                                            setEventToEdit={setEventToEdit}
+                                            setSelectedIndex={setSelectedIndex}
+                                            setSnackBarOpen={setSnackBarOpen}
+                                            setSnackBarMessage={setSnackBarMessage}
+                                            eventsType={"userEvents"}
+                                            onDelete={handleDeleteFromPopup}
+
+
+                                        />
+                                    ) :
+                                        (
+
+                                            <Typography variant='h5' className='tw:my-auto tw:p-4 tw:text-center tw:mx-auto'>Nothing to see here!</Typography>
+
+                                        )
+
                                     }
 
-                                </List>
-                            ) :
-                                (
 
-                                    <Typography variant='h5' className='tw:my-auto tw:p-4 tw:text-center tw:mx-auto'>Nothing to see here!</Typography>
+                                </TabPanel>
 
-                                )
-
-                            }
-
-
-                        </TabPanel>
-
-                    </Paper>
+                            </Paper>
+                        )
+                    }
                 </Box>
             </div>
             <AppBar position='fixed' className='tw:!top-auto tw:!bottom-0'>
