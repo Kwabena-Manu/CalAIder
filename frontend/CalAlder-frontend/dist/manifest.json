@@ -5,7 +5,10 @@
   "description": "Check your Google Calendar availability using AI",
   "permissions": [
     "identity",
-    "storage"
+    "storage",
+    "scripting",
+    "activeTab",
+    "tabs"
   ],
   "oauth2": {
     "client_id": "591489922177-nibgnqh9rh5ik7jjlnkavsk1rbua3b1f.apps.googleusercontent.com",

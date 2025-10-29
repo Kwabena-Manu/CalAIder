@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import reactLogo from '../assets/react.svg';
 import viteLogo from '/vite.svg';
+import { extractEvents, ensureModelReady } from '../../../../promptAPI/prompt_ai.js';
 import { mockEvents } from './mockData';
 import EditPaper from '../components/EditPaper';
 
@@ -49,6 +50,26 @@ const Popup = (props) => {
 
     // Instantiating the Google API Context
     const googleApiContext = useGoogleAPIContext();
+
+    useEffect(()=> {
+        const detect_and_extract_events = async () => {
+            // Loads and prepares Gemini Nano
+            await ensureModelReady();
+
+            // Extract web text from websites. Not fully working yet
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const webText = await chrome.runtime.getBackgroundPage()
+                .then(bg => bg.extractPage(tab.id));
+            
+            console.log("Extracted text:", webText);
+
+            // Extract events from web pages
+            const data = await extractEvents(webText);
+            setEventList([...data.events]);
+            console.log(data);
+        };
+        detect_and_extract_events();        
+    }, []);
 
     // Function to handle User Login 
     const handleUserLogin = async () => {
