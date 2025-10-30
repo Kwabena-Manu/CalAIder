@@ -33,6 +33,7 @@ import Snackbar from '@mui/material/Snackbar';
 import CloseIcon from '@mui/icons-material/Close';
 import Slide from '@mui/material/Slide';
 import { useGoogleAPIContext } from '../context/GoogleAPIContext';
+import { useEventExtraction } from '../context/EventExtractionContext';
 import Card from '@mui/material/Card';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -41,6 +42,10 @@ import Avatar from '@mui/material/Avatar';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import EventListDisplay from './components/EventListDisplay';
+import LinearProgress from '@mui/material/LinearProgress';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import ClearIcon from '@mui/icons-material/Clear';
+import DebugPanel from './components/DebugPanel';
 
 
 
@@ -105,8 +110,26 @@ const Popup = (props) => {
 
     const [editButtonClicked, setEditButtonClicked] = useState(false);
     const [eventToEdit, setEventToEdit] = useState({});
-    const [eventList, setEventList] = useState([...mockEvents.events]);
+    const [editingEventType, setEditingEventType] = useState(null); // 'detected' or 'user'
+    // Event extraction state from context
+    const {
+        detectedEvents,
+        isExtracting,
+        lastError,
+        modelProgress,
+        modelReady,
+        status,
+        currentItem,
+        totalItems,
+        extractEventsFromPage,
+        cancelExtraction,
+        removeDetectedEvent,
+        markEventAsAdded,
+        updateDetectedEvent,
+        clearDetectedEvents
+    } = useEventExtraction();
     const [selectedIndex, setSelectedIndex] = useState(null);
+    const [eventList, setEventList] = useState([...mockEvents.events]);
 
     // Instantiating the Google API Context
     const googleApiContext = useGoogleAPIContext();
@@ -171,12 +194,33 @@ const Popup = (props) => {
 
     }
 
-    const handleEditEventSave = (editedEvent) => {
-        setEventList(prev =>
-            prev.map((ev, i) => (i === selectedIndex ? { ...ev, ...editedEvent } : ev))
-        );
-        setEditButtonClicked(false);
-        setSelectedIndex(null);
+    const handleEditEventSave = async (editedEvent) => {
+        try {
+            if (editingEventType === 'detected') {
+                // Update detected event via context (and persist cache)
+                updateDetectedEvent(selectedIndex, editedEvent);
+                setSnackBarMessage('Event updated');
+                setSnackBarOpen(true);
+            } else if (editingEventType === 'user') {
+                // Update user calendar event via Google API
+                const original = googleApiContext?.userEvents?.[selectedIndex];
+                const eventId = original?.id;
+                if (!eventId || !googleApiContext?.updateCalendarEvent) {
+                    throw new Error('Missing event id or updateCalendarEvent');
+                }
+                await googleApiContext.updateCalendarEvent(eventId, editedEvent);
+                setSnackBarMessage('Calendar event updated');
+                setSnackBarOpen(true);
+            }
+        } catch (e) {
+            console.error('Failed to save edits:', e);
+            setSnackBarMessage('Failed to save edits');
+            setSnackBarOpen(true);
+        } finally {
+            setEditButtonClicked(false);
+            setSelectedIndex(null);
+            setEditingEventType(null);
+        }
     };
 
     const testData = eventList.map(e => ({
@@ -282,10 +326,10 @@ const Popup = (props) => {
                             <Divider />
 
                             <ListItem className='' >
-                                <Tabs className='tw:mx-auto' value={tabValue} onChange={handleTabChange} centered>
+                                <Tabs className='tw:mx-auto' variant='scrollable' scrollButtons="auto" value={tabValue} onChange={handleTabChange} centered>
                                     <Tab label="Detected Events" {...a11yProps(0)} />
                                     <Tab label="Upcoming Events" {...a11yProps(1)} />
-                                    {/* <Tab></Tab> */}
+                                    <Tab label="Debug" {...a11yProps(2)} />
                                 </Tabs>
 
 
@@ -296,15 +340,71 @@ const Popup = (props) => {
                 </Box>
 
                 <Box className=" tw:overflow-hidden tw:!px-2">
-                    <div className='tw:my-2 tw:px-4 tw:text-zinc-600 tw:font-bold tw:text-xs'>
-                        {tabValue === 1 ? (
-                            (googleApiContext?.userEvents?.length > 0) ? (
-                                `Showing (${googleApiContext.userEvents.length}) upcoming events`
-                            ) : (
-                                "No upcoming events"
-                            )
-                        ) : (
-                            (eventList?.length > 0) ? (`Detected (${eventList.length}) events so far`) : ("Detected 3 events on this page")
+                    <div className='tw:my-2 tw:px-4'>
+                        <div className='tw:flex tw:justify-between tw:items-center'>
+                            <span className='tw:text-zinc-600 tw:font-bold tw:text-xs'>
+                                {tabValue === 1 ? (
+                                    (googleApiContext?.userEvents?.length > 0) ? (
+                                        `Showing (${googleApiContext.userEvents.length}) upcoming events`
+                                    ) : (
+                                        "No upcoming events"
+                                    )
+                                ) : (
+                                    isExtracting ?
+                                        "Analyzing page..." :
+                                        (detectedEvents?.length > 0) ?
+                                            `Detected (${detectedEvents.length}) events` :
+                                            "No events detected"
+                                )}
+                            </span>
+                            {tabValue === 0 && (
+                                <Stack direction="row" spacing={0.5}>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => {
+                                            if (isExtracting) {
+                                                cancelExtraction();
+                                            } else {
+                                                extractEventsFromPage(true); // Force refresh, skip cache
+                                            }
+                                        }}
+                                    >
+                                        <Tooltip title={isExtracting ? "Cancel" : "Refresh"}>
+                                            <RefreshIcon
+                                                fontSize="small"
+                                                className={isExtracting ? "tw:animate-spin" : ""}
+                                            />
+                                        </Tooltip>
+                                    </IconButton>
+                                    <IconButton
+                                        size="small"
+                                        onClick={async () => {
+                                            if (window.confirm('Clear all detected events and cache for this page?')) {
+                                                await clearDetectedEvents();
+                                                setSnackBarMessage('Detected events cleared');
+                                                setSnackBarOpen(true);
+                                            }
+                                        }}
+                                        disabled={isExtracting || detectedEvents?.length === 0}
+                                    >
+                                        <Tooltip title="Clear all detected events">
+                                            <ClearIcon fontSize="small" />
+                                        </Tooltip>
+                                    </IconButton>
+                                </Stack>
+                            )}
+                        </div>
+                        {tabValue === 0 && modelProgress < 1 && isExtracting && (
+                            <LinearProgress
+                                variant="determinate"
+                                value={modelProgress * 100}
+                                className='tw:mt-2'
+                            />
+                        )}
+                        {lastError && (
+                            <Typography color="error" variant="caption" className='tw:block tw:mt-1'>
+                                {lastError}
+                            </Typography>
                         )}
                     </div>
                     {
@@ -317,21 +417,52 @@ const Popup = (props) => {
                         ) : (
                             <Paper variant='outlined' className='tw:max-h-[350px] tw:h-fit tw:mx-2 tw:overflow-y-auto'>
                                 <TabPanel value={tabValue} index={0}>
-                                    {eventList ? (
-                                        <EventListDisplay events={eventList}
+                                    {/* Show current extraction status when extracting */}
+                                    {isExtracting && (
+                                        <Box className='tw:my-2 tw:p-2 tw:text-center tw:mx-auto'>
+                                            <Typography variant="body2" className='tw:mb-1'>
+                                                {status || 'Processing...'}
+                                            </Typography>
+                                            {totalItems > 0 && (
+                                                <Typography variant="caption" color="textSecondary">
+                                                    Section {currentItem} of {totalItems}
+                                                </Typography>
+                                            )}
+                                            {modelProgress > 0 && (
+                                                <LinearProgress variant="determinate" value={Math.min(100, Math.round(modelProgress * 100))} />
+                                            )}
+                                        </Box>
+                                    )}
+
+                                    {/* Always show detected events as they arrive */}
+                                    {detectedEvents?.length ? (
+                                        <EventListDisplay
+                                            events={detectedEvents}
                                             setEditButtonClicked={setEditButtonClicked}
                                             setEventToEdit={setEventToEdit}
                                             setSelectedIndex={setSelectedIndex}
                                             setSnackBarOpen={setSnackBarOpen}
                                             setSnackBarMessage={setSnackBarMessage}
                                             eventsType={'detectedEvents'}
-                                            onDelete={handleDeleteFromPopup}
-
-
+                                            onDelete={(index) => {
+                                                removeDetectedEvent(index);
+                                                setSnackBarMessage('Event deleted');
+                                                setSnackBarOpen(true);
+                                            }}
+                                            onMarkAsAdded={markEventAsAdded}
+                                            onEdit={(event, index) => {
+                                                setEditingEventType('detected');
+                                                setEditButtonClicked(true);
+                                                setEventToEdit(event);
+                                                setSelectedIndex(index);
+                                            }}
                                         />
                                     ) : (
-                                        <Typography variant='h5' className='tw:my-auto tw:p-4 tw:text-center tw:mx-auto'>Nothing to see here!</Typography>
-
+                                        !isExtracting && (
+                                            <Typography variant='body2' className='tw:my-auto tw:p-4 tw:text-center tw:mx-auto'>
+                                                No events detected on this page. Try refreshing or visiting a page with event information.
+                                            </Typography>
+                                        )
                                     )}
                                 </TabPanel>
                                 <TabPanel value={tabValue} index={1}>
@@ -347,18 +478,73 @@ const Popup = (props) => {
                                             eventsType={"userEvents"}
                                             onDelete={handleDeleteFromPopup}
 
+                                            onEdit={(event, index) => {
+                                                // Normalize Google Calendar event shape to EditPaper schema
+                                                const toTwo = (n) => String(n).padStart(2, '0');
+                                                const toDateParts = (dt) => {
+                                                    if (!dt) return { date: null, time: null };
+                                                    const d = new Date(dt);
+                                                    if (isNaN(d)) return { date: null, time: null };
+                                                    const date = `${d.getFullYear()}-${toTwo(d.getMonth() + 1)}-${toTwo(d.getDate())}`;
+                                                    const time = `${toTwo(d.getHours())}:${toTwo(d.getMinutes())}`;
+                                                    return { date, time };
+                                                };
 
+                                                let startDate = null, startTime = null, endDate = null, endTime = null;
+                                                if (event?.start?.dateTime) {
+                                                    const p = toDateParts(event.start.dateTime);
+                                                    startDate = p.date; startTime = p.time;
+                                                } else if (event?.start?.date) {
+                                                    startDate = event.start.date;
+                                                }
+                                                if (event?.end?.dateTime) {
+                                                    const p2 = toDateParts(event.end.dateTime);
+                                                    endDate = p2.date; endTime = p2.time;
+                                                } else if (event?.end?.date) {
+                                                    // Google all-day events use exclusive end date; for editing, show the previous day as inclusive
+                                                    try {
+                                                        const d = new Date(event.end.date);
+                                                        d.setDate(d.getDate() - 1);
+                                                        endDate = `${d.getFullYear()}-${toTwo(d.getMonth() + 1)}-${toTwo(d.getDate())}`;
+                                                    } catch (_) {
+                                                        endDate = event.end.date;
+                                                    }
+                                                }
+
+                                                const normalized = {
+                                                    title: event.summary || event.title || 'Untitled event',
+                                                    startDate,
+                                                    startTime,
+                                                    endDate: endDate || startDate,
+                                                    endTime: endTime || null,
+                                                    timezone: event?.start?.timeZone || event?.timeZone || null,
+                                                    venue: null,
+                                                    address: event.location || null,
+                                                    city: null,
+                                                    country: null,
+                                                    url: event.htmlLink || null,
+                                                    notes: event.description || null,
+                                                };
+
+                                                setEditingEventType('user');
+                                                setEditButtonClicked(true);
+                                                setEventToEdit(normalized);
+                                                setSelectedIndex(index);
+                                            }}
                                         />
                                     ) :
                                         (
 
-                                            <Typography variant='h5' className='tw:my-auto tw:p-4 tw:text-center tw:mx-auto'>Nothing to see here!</Typography>
+                                            <Typography variant='h5' className='tw:my-auto tw:p-4 tw:text-center tw:mx-auto'>{googleApiContext?.user ? "Nothing to see here!" : "Sign in to see upcoming events from your calendar"}</Typography>
 
                                         )
 
                                     }
 
 
+                                </TabPanel>
+                                <TabPanel value={tabValue} index={2}>
+                                    <DebugPanel />
                                 </TabPanel>
 
                             </Paper>

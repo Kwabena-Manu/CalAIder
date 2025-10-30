@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { parseAndFormatTime } from '../utils/timeFormatUtils';
 
 
 
@@ -112,15 +113,15 @@ const GoogleAPIContextProvider = ({ children }) => {
             // ignore top-level errors
         } finally {
             // clear local state and storage
-            try { setToken(null); } catch (e) {}
-            try { setUser(null); } catch (e) {}
-            try { setUserEvents(null); } catch (e) {}
-            try { localStorage.removeItem('token'); localStorage.removeItem('user'); } catch (e) {}
+            try { setToken(null); } catch (e) { }
+            try { setUser(null); } catch (e) { }
+            try { setUserEvents(null); } catch (e) { }
+            try { localStorage.removeItem('token'); localStorage.removeItem('user'); } catch (e) { }
             try {
                 if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync && chrome.storage.sync.remove) {
-                    chrome.storage.sync.remove(['token','user'], () => {});
+                    chrome.storage.sync.remove(['token', 'user'], () => { });
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
     }, [token]);
 
@@ -200,6 +201,275 @@ const GoogleAPIContextProvider = ({ children }) => {
 
     }, [token]);
 
+    // Add an event to the user's primary calendar
+    const addEventToCalendar = useCallback(async (eventObj) => {
+        if (!token) throw new Error('Not authenticated');
+
+        // Helper: format date string (YYYY-MM-DD) or return null
+        const formatDateOnly = (d) => {
+            if (!d) return null;
+            // If already YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+            // Try to parse
+            const dt = new Date(d);
+            if (!isNaN(dt)) return dt.toISOString().slice(0, 10);
+            return null;
+        };
+
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+        // Build event body with careful date/time handling
+        const body = {
+            summary: eventObj.title || eventObj.summary || 'Event',
+            description: eventObj.notes || eventObj.description || undefined,
+            location: eventObj.address || eventObj.location || eventObj.venue || undefined,
+        };
+
+        const startDateOnly = formatDateOnly(eventObj.startDate || eventObj.start);
+        const endDateOnly = formatDateOnly(eventObj.endDate || eventObj.end);
+
+        // If we have a start time, attempt to parse and use dateTime
+        const parsedStartTime = parseAndFormatTime(eventObj.startTime || eventObj.start_time || eventObj.startTimeRaw || '');
+        const parsedEndTime = parseAndFormatTime(eventObj.endTime || eventObj.end_time || eventObj.endTimeRaw || '');
+
+        if (parsedStartTime) {
+            // Use dateTime with timezone
+            const sd = startDateOnly || formatDateOnly(new Date().toISOString());
+            const ed = endDateOnly || sd;
+            const startDateTime = `${sd}T${parsedStartTime}`;
+            let endDateTime = `${ed}T${parsedEndTime || parsedStartTime}`;
+            // If end equals start, add one hour by default
+            if (!parsedEndTime) {
+                const dt = new Date(`${startDateTime}`);
+                dt.setHours(dt.getHours() + 1);
+                endDateTime = dt.toISOString().slice(0, 19);
+            }
+
+            body.start = { dateTime: startDateTime, timeZone: tz };
+            body.end = { dateTime: endDateTime, timeZone: tz };
+        } else if (startDateOnly) {
+            // All-day event: Google Calendar requires end.date to be the day AFTER the last day (exclusive)
+            const start = startDateOnly;
+            let end = endDateOnly || start;
+            try {
+                const endDt = new Date(end);
+                // If end equals start, set end to next day to represent a single-day all-day event
+                if (end === start) {
+                    endDt.setDate(endDt.getDate() + 1);
+                    end = endDt.toISOString().slice(0, 10);
+                } else {
+                    // If user provided a same-day end, still make it exclusive by adding 1 day
+                    const startDt = new Date(start);
+                    const endDt2 = new Date(end);
+                    if (endDt2.getTime() <= startDt.getTime()) {
+                        endDt2.setDate(startDt.getDate() + 1);
+                        end = endDt2.toISOString().slice(0, 10);
+                    } else {
+                        // Keep provided end but add one day to make it exclusive
+                        endDt2.setDate(endDt2.getDate() + 1);
+                        end = endDt2.toISOString().slice(0, 10);
+                    }
+                }
+            } catch (e) {
+                // fallback: set end to next day
+                const dt = new Date(start);
+                dt.setDate(dt.getDate() + 1);
+                end = dt.toISOString().slice(0, 10);
+            }
+            body.start = { date: start };
+            body.end = { date: end };
+        } else {
+            // As a last resort, if eventObj has an RFC3339 start like 'start' or 'start.dateTime'
+            if (eventObj.start && typeof eventObj.start === 'string' && !isNaN(new Date(eventObj.start))) {
+                body.start = { dateTime: new Date(eventObj.start).toISOString() };
+                // set end to +1 hour
+                const dt = new Date(eventObj.start);
+                dt.setHours(dt.getHours() + 1);
+                body.end = { dateTime: dt.toISOString() };
+            } else if (eventObj.start && eventObj.start.dateTime) {
+                body.start = eventObj.start;
+                body.end = eventObj.end || { dateTime: new Date().toISOString() };
+            } else {
+                throw new Error('Event missing recognizable start date/time');
+            }
+        }
+
+        const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events`;
+
+        const doFetch = async (tkn) => {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${tkn}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (res.status === 401) throw new Error('unauthorized');
+            const text = await res.text();
+            let data = null;
+            try { data = JSON.parse(text); } catch (e) { data = text; }
+            if (!res.ok) {
+                const msg = `Calendar API error ${res.status}: ${JSON.stringify(data)}`;
+                console.error(msg, body);
+                const err = new Error(msg);
+                err.response = data;
+                throw err;
+            }
+            return data;
+        };
+
+        try {
+            const data = await doFetch(token);
+            // Optionally refresh local list of events
+            await getUpComingEvents();
+            return data;
+        } catch (err) {
+            try {
+                const newToken = await refreshToken(false);
+                const data = await doFetch(newToken);
+                await getUpComingEvents();
+                return data;
+            } catch (err2) {
+                await removeCachedToken(token);
+                throw err2;
+            }
+        }
+    }, [token, getUpComingEvents, refreshToken, removeCachedToken]);
+
+    // Update an existing event in the user's primary calendar (PATCH)
+    const updateCalendarEvent = useCallback(async (eventId, editedEvent) => {
+        if (!token) throw new Error('Not authenticated');
+
+        // Helper: format date string (YYYY-MM-DD) or return null
+        const formatDateOnly = (d) => {
+            if (!d) return null;
+            if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+            const dt = new Date(d);
+            if (!isNaN(dt)) return dt.toISOString().slice(0, 10);
+            return null;
+        };
+
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+        const body = {
+            summary: editedEvent.title || editedEvent.summary,
+            description: editedEvent.notes || editedEvent.description,
+            location: editedEvent.address || editedEvent.location || editedEvent.venue,
+        };
+
+        // Build start/end from edited fields; fall back to existing if not provided
+        const startDateOnly = formatDateOnly(editedEvent.startDate);
+        const endDateOnly = formatDateOnly(editedEvent.endDate);
+        const parsedStartTime = parseAndFormatTime(editedEvent.startTime || editedEvent.start_time || editedEvent.startTimeRaw || '');
+        const parsedEndTime = parseAndFormatTime(editedEvent.endTime || editedEvent.end_time || editedEvent.endTimeRaw || '');
+
+        if (startDateOnly) {
+            if (parsedStartTime) {
+                const sd = startDateOnly;
+                const ed = endDateOnly || sd;
+                const startDateTime = `${sd}T${parsedStartTime}`;
+                let endDateTime = `${ed}T${parsedEndTime || parsedStartTime}`;
+                if (!parsedEndTime) {
+                    const dt = new Date(`${startDateTime}`);
+                    dt.setHours(dt.getHours() + 1);
+                    endDateTime = dt.toISOString().slice(0, 19);
+                }
+                body.start = { dateTime: startDateTime, timeZone: tz };
+                body.end = { dateTime: endDateTime, timeZone: tz };
+            } else {
+                // All-day event handling (Google expects end.date as exclusive)
+                const start = startDateOnly;
+                let end = endDateOnly || start;
+                try {
+                    const endDt = new Date(end);
+                    // Make end exclusive (next day)
+                    endDt.setDate(endDt.getDate() + 1);
+                    end = endDt.toISOString().slice(0, 10);
+                } catch (e) {
+                    const dt = new Date(start);
+                    dt.setDate(dt.getDate() + 1);
+                    end = dt.toISOString().slice(0, 10);
+                }
+                body.start = { date: start };
+                body.end = { date: end };
+            }
+        }
+
+        const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`;
+
+        const doFetch = async (tkn) => {
+            const res = await fetch(url, {
+                method: 'PATCH',
+                headers: { Authorization: `Bearer ${tkn}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (res.status === 401) throw new Error('unauthorized');
+            const text = await res.text();
+            let data = null;
+            try { data = JSON.parse(text); } catch (e) { data = text; }
+            if (!res.ok) {
+                const msg = `Calendar API error ${res.status}: ${JSON.stringify(data)}`;
+                console.error(msg, body);
+                const err = new Error(msg);
+                err.response = data;
+                throw err;
+            }
+            return data;
+        };
+
+        try {
+            const data = await doFetch(token);
+            await getUpComingEvents();
+            return data;
+        } catch (err) {
+            try {
+                const newToken = await refreshToken(false);
+                const data = await doFetch(newToken);
+                await getUpComingEvents();
+                return data;
+            } catch (err2) {
+                await removeCachedToken(token);
+                throw err2;
+            }
+        }
+    }, [token, getUpComingEvents, refreshToken, removeCachedToken]);
+
+    // Delete an event from the user's primary calendar
+    const deleteCalendarEvent = useCallback(async (eventId) => {
+        if (!token) throw new Error('Not authenticated');
+        const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`;
+
+        const doFetch = async (tkn) => {
+            const res = await fetch(url, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${tkn}` }
+            });
+            if (res.status === 401) throw new Error('unauthorized');
+            if (!res.ok && res.status !== 204) {
+                const text = await res.text();
+                const msg = `Calendar API delete error ${res.status}: ${text}`;
+                console.error(msg);
+                const err = new Error(msg);
+                throw err;
+            }
+            return true;
+        };
+
+        try {
+            await doFetch(token);
+            await getUpComingEvents();
+            return true;
+        } catch (err) {
+            try {
+                const newToken = await refreshToken(false);
+                await doFetch(newToken);
+                await getUpComingEvents();
+                return true;
+            } catch (err2) {
+                await removeCachedToken(token);
+                throw err2;
+            }
+        }
+    }, [token, getUpComingEvents, refreshToken, removeCachedToken]);
+
 
     // Load token from storage on mount (Chrome extension or localStorage fallback)
     useEffect(() => {
@@ -263,7 +533,7 @@ const GoogleAPIContextProvider = ({ children }) => {
 
 
     return (
-        <GoogleAPIContext.Provider value={{ signIn, signOut, token, user, userEvents, fetchUserInfo, getUpComingEvents }}>
+        <GoogleAPIContext.Provider value={{ signIn, signOut, token, user, userEvents, fetchUserInfo, getUpComingEvents, addEventToCalendar, updateCalendarEvent, deleteCalendarEvent }}>
             {children}
         </GoogleAPIContext.Provider>
     )
