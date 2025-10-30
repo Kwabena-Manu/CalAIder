@@ -1,0 +1,102 @@
+export const mockEvents = {
+    events: [
+        {
+            title: "Grand Opening: Night Market Davis",
+            startDate: "2025-10-26",
+            startTime: "17:00",
+            endDate: "2025-10-26",
+            endTime: "21:30",
+            timezone: "America/Los_Angeles",
+            venue: "Central Park",
+            address: "401 C St, Davis, CA",
+            city: "Davis",
+            country: "USA",
+            url: "https://davisnightmarket.org/events/opening",
+            notes: "Free entry"
+        },
+        {
+            title: "AI in Everyday Life – Public Lecture",
+            startDate: "2025-11-02",
+            startTime: "18:00",
+            endDate: "2025-11-02",
+            endTime: "19:30",
+            timezone: "America/Los_Angeles",
+            venue: "UC Davis Conference Center",
+            address: "550 Alumni Ln, Davis, CA",
+            city: "Davis",
+            country: "USA",
+            url: "https://ucdavis.edu/events/ai-lecture",
+            notes: "Open to public"
+        },
+        {
+            title: "Coding for Climate Hackathon",
+            startDate: "2025-11-09",
+            startTime: "09:00",
+            endDate: "2025-11-10",
+            endTime: "18:00",
+            timezone: "America/Los_Angeles",
+            venue: "Google Community Space",
+            address: "188 Embarcadero, San Francisco, CA",
+            city: "San Francisco",
+            country: "USA",
+            url: "https://hackforclimate.devpost.com",
+            notes: "48-hour hackathon"
+        },
+        {
+            title: "Jazz Night at the Blue Note",
+            startDate: "2025-11-15",
+            startTime: "20:00",
+            endDate: "2025-11-15",
+            endTime: "23:00",
+            timezone: "America/New_York",
+            venue: "Blue Note Jazz Club",
+            address: "131 W 3rd St, New York, NY",
+            city: "New York",
+            country: "USA",
+            url: "https://bluenotejazz.com",
+            notes: "Live music • 18+"
+        },
+        {
+            title: "Winter Coding Camp for Teens",
+            startDate: "2025-12-01",
+            startTime: "09:30",
+            endDate: "2025-12-05",
+            endTime: "16:30",
+            timezone: "America/Los_Angeles",
+            venue: "TechYouth Center",
+            address: "700 Main St, Woodland, CA",
+            city: "Woodland",
+            country: "USA",
+            url: "https://techyouth.org/winter-camp",
+            notes: "Beginner friendly"
+        },
+        {
+            title: "Startup Pitch Night",
+            startDate: "2025-12-12",
+            startTime: "18:30",
+            endDate: "2025-12-12",
+            endTime: "21:00",
+            timezone: "America/Los_Angeles",
+            venue: "WeWork Downtown",
+            address: "650 California St, San Francisco, CA",
+            city: "San Francisco",
+            country: "USA",
+            url: "https://wework.com/events/pitch-night",
+            notes: "Networking opportunity"
+        },
+        {
+            title: "New Year Fireworks Festival",
+            startDate: "2025-12-31",
+            startTime: "20:00",
+            endDate: "2026-01-01",
+            endTime: "00:30",
+            timezone: "America/Los_Angeles",
+            venue: "Pier 39",
+            address: "Beach St & The Embarcadero, San Francisco, CA",
+            city: "San Francisco",
+            country: "USA",
+            url: "https://sfnewyearfireworks.com",
+            notes: "Free public event"
+        }
+    ]
+};
