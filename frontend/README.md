@@ -1,4 +1,4 @@
-# CalAlder Chrome Extension — Local Install (using dist)
+# CalAIder Chrome Extension — Local Install (using dist)
 
 Quick instructions to install the Chrome extension from the prebuilt `dist` folder included in the `calalder-frontend` repository.
 
