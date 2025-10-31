@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "CalAIder",
+  "version": "1.0.0",
+  "description": "Check your Google Calendar availability using AI",
+  "permissions": [
+    "identity",
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "oauth2": {
+    "client_id": "591489922177-s8rdl403q2f9so546sf0g0f05qc8fl4v.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile"
+    ]
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "CalAIder"
+  },
+  "host_permissions": [
+    "https://www.googleapis.com/*",
+    "https://oauth2.googleapis.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*/*",
+        "http://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
