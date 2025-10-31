@@ -22,30 +22,45 @@ export default function EditPaper({ eventData, onClose, onSave }) {
     return (
         <div className='edit-paper-container'>
             <div className='edit-paper-label'>Title</div>
-            <input 
-                className='edit-paper-title-input' 
-                type='text' 
-                placeholder="Enter the event title" 
+            <input
+                className='edit-paper-title-input'
+                type='text'
+                placeholder="Enter the event title"
                 // onChange={e => setTitleInput(e.target.value)}
-                onChange={e => setEditedEvent({...editedEvent, title: e.target.value})}
+                onChange={e => setEditedEvent({ ...editedEvent, title: e.target.value })}
                 value={editedEvent.title}
             />
             <div className='edit-paper-label'>Address/Location</div>
-            <input 
-                className='edit-paper-title-input' 
-                type='text' 
-                placeholder="Enter the event title" 
+            <input
+                className='edit-paper-title-input'
+                type='text'
+                placeholder="Enter the event title"
                 // onChange={e => setTitleInput(e.target.value)}
-                onChange={e => setEditedEvent({...editedEvent, address: e.target.value})}
+                onChange={e => setEditedEvent({ ...editedEvent, address: e.target.value })}
                 value={editedEvent.address}
             />
-            <div className='edit-paper-label'>Date</div>
+            <div className='edit-paper-label'>Start Date</div>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                     className='edit-paper-date-picker'
-                    label="Select a date"
+                    label="Start Date"
                     value={dayjs(editedEvent.startDate)}
-                    onChange={(newValue) => setEditedEvent({ ...editedEvent, startDate: dayjs(newValue).format('YYYY-MM-DD')})}
+                    onChange={(newValue) => setEditedEvent({ ...editedEvent, startDate: dayjs(newValue).format('YYYY-MM-DD') })}
+                    slotProps={{
+                        textField: {
+                            size: "small",
+                            fullWidth: true,
+                        },
+                    }}
+                />
+            </LocalizationProvider>
+            <div className='edit-paper-label'>End Date</div>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                    className='edit-paper-date-picker'
+                    label="End Date"
+                    value={dayjs(editedEvent.endDate || editedEvent.startDate)}
+                    onChange={(newValue) => setEditedEvent({ ...editedEvent, endDate: dayjs(newValue).format('YYYY-MM-DD') })}
                     slotProps={{
                         textField: {
                             size: "small",
@@ -100,10 +115,10 @@ export default function EditPaper({ eventData, onClose, onSave }) {
                 </div>
             </div>
             <div className='edit-paper-label'>Description</div>
-            <textarea 
-                className='edit-paper-textarea' 
-                placeholder='Description of the event' 
-                onChange={e => setEditedEvent({ ...editedEvent, notes: e.target.value})}
+            <textarea
+                className='edit-paper-textarea'
+                placeholder='Description of the event'
+                onChange={e => setEditedEvent({ ...editedEvent, notes: e.target.value })}
                 value={editedEvent.notes}
             />
             <div className='edit-paper-button-container'>

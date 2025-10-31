@@ -7,16 +7,18 @@ import viteLogo from '/vite.svg'
 
 // Injecting context providers
 import { GoogleAPIContextProvider } from './context/GoogleAPIContext';
+import { EventExtractionProvider } from './context/EventExtractionContext';
 
 //importing components
 import Popup from './popup/Popup'
 
 function App() {
-
   return (
     <GoogleAPIContextProvider>
-      <Popup />
-    </GoogleAPIContextProvider >
+      <EventExtractionProvider>
+        <Popup />
+      </EventExtractionProvider>
+    </GoogleAPIContextProvider>
   )
 }
 
