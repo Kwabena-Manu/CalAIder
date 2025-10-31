@@ -1,4 +1,4 @@
-// frontend/CalAlder-frontend/src/utils/timeFormatUtils.js
+// frontend/CalAIder-frontend/src/utils/timeFormatUtils.js
 
 /**
  * Parses various time formats (e.g., "7 PM", "14:30", "noon") and converts to HH:mm:ss.
