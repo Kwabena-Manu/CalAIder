@@ -2,11 +2,11 @@
 
 **Pronounced:** *Cal–eye–der* | Phonetically: `/kæl ˈaɪ dər/`
 
-![CalAIder Logo](/images/CalAIder-128.png) <!-- Add your logo here -->
+![CalAIder Logo](./images/CalAIder-128.png) <!-- Add your logo here -->
 
 An intelligent Chrome extension that automatically detects events on web pages and seamlessly integrates them with your Google Calendar using AI-powered extraction and Google's built-in Gemini Nano model.
 
-![Main Interface](/images/CalAIder-ui.png) <!-- Add screenshot of main popup interface -->
+![Main Interface](./images/CalAIder-ui.png) <!-- Add screenshot of main popup interface -->
 
 ---
 
@@ -34,7 +34,7 @@ An intelligent Chrome extension that automatically detects events on web pages a
 - **Event Preview**: Review and edit event details before adding to calendar
 - **Debug Panel**: Built-in debugging tools for developers
 
-![Event Detection](/images/CalAIder-event-detection.png) <!-- Add screenshot of event detection in action -->
+![Event Detection](./images/CalAIder-event-detection.png) <!-- Add screenshot of event detection in action -->
 
 ###  Privacy & Security
 - **On-Device Processing**: All AI processing happens locally in your browser
