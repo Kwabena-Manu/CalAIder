@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "CalAIder (Dev)",
   "version": "1.0.0",
-  "description": "Check your Google Calendar availability using AI - Development Build",
+  "description": "Instantly capture event details from any webpage and manage your Google Calendar with AI-powered extraction",
   "permissions": [
     "identity",
     "storage",
@@ -41,5 +41,10 @@
       ],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "icons": {
+    "16": "CalAIder-16.png",
+    "48": "CalAIder-48.png",
+    "128": "CalAIder-128.png"
+  }
 }

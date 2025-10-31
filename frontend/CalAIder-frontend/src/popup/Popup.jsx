@@ -288,7 +288,7 @@ const Popup = (props) => {
                                 <ListItemText primary={
                                     <div className='tw:text-[30px]'>
                                         <span className='tw:font-bold tw:text-[#1a73e8]  tw:tracking-wider'>
-                                            CalAlder
+                                            CalAIder
                                         </span>
 
                                     </div>} className='tw:m-auto ' />
@@ -555,7 +555,7 @@ const Popup = (props) => {
             <AppBar position='fixed' className='tw:!top-auto tw:!bottom-0'>
 
                 <Toolbar>
-                    CalAlder
+                    CalAIder
                 </Toolbar>
             </AppBar>
 
