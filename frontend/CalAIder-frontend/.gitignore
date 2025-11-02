@@ -49,3 +49,7 @@ secrets/
 
 # Build artifacts
 build/
+
+# scripts
+*.ps1
+extract-public-key.js

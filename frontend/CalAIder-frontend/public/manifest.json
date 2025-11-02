@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CalAIder (Dev)",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2tNj1ZED1OOq9pqlOtHKvqITS7xRVrTg16I1+4T5tFM1wL1AqLT6doulYu5fb4GtWiRv0+CfnGEwzD0XX/FzFpZ7Vyj0s1/BQELQCB2pS+Mp0uYfVXYmSEanx8PlckUiUO05Q3AvQFaLStuqhXCZYymJyKzbjGUa/OF7tQWdrRcGxJnHnr+2rR3t3h59JrS5I0IIMxJM51a324vAL7JuHAcLkrdbQANiRAfH3tbib7HbxbK5u9VEnBtrBpcim2BNp/icfNF2hN1f0OEgydG0nxo3Y6+l7gbuNZtOLZBVlHudPddNwyXeiw9PdKXrP1pT4nwPqWB+MqsjrTpMRNaIqwIDAQAB",
   "version": "1.0.0",
   "description": "Instantly capture event details from any webpage and manage your Google Calendar with AI-powered extraction",
   "permissions": [
