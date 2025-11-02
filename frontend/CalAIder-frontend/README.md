@@ -4,11 +4,10 @@
 
 The frontend implementation of CalAIder - an intelligent Chrome extension that uses AI to detect events on web pages and sync them with Google Calendar.
 
-![CalAIder Architecture](../../docs/images/architecture.png) <!-- Add architecture diagram -->
 
 ---
 
-## 🏗️ Architecture Overview
+##  Architecture Overview
 
 This Chrome extension is built with **React 19** and **Vite**, leveraging modern web technologies and Chrome's experimental Built-in AI API.
 
@@ -24,7 +23,7 @@ This Chrome extension is built with **React 19** and **Vite**, leveraging modern
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```
 CalAIder-frontend/
@@ -77,7 +76,7 @@ CalAIder-frontend/
 
 ---
 
-## 🎯 Core Components
+##  Core Components
 
 ### 1. Popup UI (`src/popup/Popup.jsx`)
 
@@ -91,7 +90,6 @@ The main user interface displayed when clicking the extension icon.
 - Real-time extraction status
 - Debug panel for developers
 
-![Popup Interface](../../docs/images/popup-ui.png) <!-- Add popup screenshot -->
 
 **Key Functionality:**
 ```javascript
@@ -299,33 +297,7 @@ Three manifest files for different environments:
 }
 ```
 
----
 
-## 🎨 Styling
-
-### Material-UI Theme
-
-Custom theme configuration in `src/main.jsx`:
-
-```javascript
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-
-const theme = createTheme({
-  palette: {
-    primary: { main: '#4285f4' },    // Google Blue
-    secondary: { main: '#34a853' }   // Google Green
-  }
-});
-```
-
-### CSS Organization
-
-- `src/index.css` - Global styles
-- `src/App.css` - App-level styles
-- `src/popup/Popup.css` - Popup-specific styles
-- Component-specific CSS files alongside components
-
----
 
 ## 🐛 Debugging
 
@@ -333,7 +305,7 @@ const theme = createTheme({
 
 **For Popup:**
 1. Right-click extension icon → "Inspect popup"
-2. Opens DevTools for popup UI
+2. Opens DevTools for pop-up UI
 
 **For Background Service Worker:**
 1. Go to `chrome://extensions`
@@ -347,13 +319,12 @@ const theme = createTheme({
 
 ### Debug Panel
 
-Built-in debug panel in popup:
+Built-in debug panel in pop-up:
 - View raw extraction data
 - Monitor AI model status
 - Inspect cached events
 - Clear storage
 
-![Debug Panel](../../docs/images/debug-panel.png) <!-- Add debug panel screenshot -->
 
 ---
 
@@ -382,95 +353,5 @@ npm run build:prod
 cd dist
 # Zip all contents (not the dist folder itself)
 ```
-
-### Chrome Web Store Submission
-
-See [PUBLISHING_GUIDE.md](../../PUBLISHING_GUIDE.md) for complete instructions.
-
----
-
-## 🔐 Security Notes
-
-- OAuth client IDs are safe to commit (they're public)
-- Never commit `.pem` files or client secrets
-- All AI processing happens on-device
-- No user data sent to external servers
-- See [SECURITY_ANALYSIS.md](../../SECURITY_ANALYSIS.md) for full audit
-
----
-
-## 📚 Additional Documentation
-
-- [Main README](../../README.md) - Project overview
-- [Frontend README](../README.md) - Extension installation guide
-- [Manifest Guide](../../MANIFEST_GUIDE.md) - OAuth configuration
-- [Publishing Guide](../../PUBLISHING_GUIDE.md) - Chrome Web Store deployment
-- [Security Analysis](../../SECURITY_ANALYSIS.md) - Security audit
-
----
-
-## 🤝 Contributing to Frontend
-
-### Code Style
-
-- Use functional components with hooks
-- Follow Material-UI patterns
-- Use PropTypes for type checking
-- Keep components under 300 lines
-- Extract reusable logic to hooks or utils
-
-### Adding Features
-
-1. Create feature branch
-2. Add components to appropriate directories
-3. Update tests if applicable
-4. Build and test in Chrome
-5. Submit pull request
-
----
-
-## 🆘 Troubleshooting
-
-### Common Build Issues
-
-**"Module not found"**
-```bash
-# Clear cache and reinstall
-rm -rf node_modules package-lock.json
-npm install
-```
-
-**"Vite build fails"**
-```bash
-# Check for syntax errors
-npm run lint
-```
-
-### Extension Issues
-
-**"Extension won't load"**
-- Verify `manifest.json` exists in `dist/`
-- Check Chrome console for errors
-- Ensure all permissions are valid
-
-**"AI model not available"**
-- Enable Chrome flags (see [Frontend README](../README.md))
-- Wait for model download (check `chrome://components`)
-
----
-
-## 📞 Support
-
-For frontend-specific issues:
-1. Check console logs (popup + background + content script)
-2. Enable debug panel for detailed extraction logs
-3. Review [Troubleshooting Guide](../README.md#troubleshooting)
-4. Open issue on GitHub with:
-   - Chrome version
-   - Extension version
-   - Console error messages
-   - Steps to reproduce
-
----
 
 **Built with React + Vite + ❤️**
