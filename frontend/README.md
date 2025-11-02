@@ -19,13 +19,21 @@ frontend/
     │   ├── services/           # Business logic
     │   ├── context/            # React contexts
     │   ├── components/         # Reusable components
+    │   ├── content/            # Content script source
     │   └── utils/              # Helper functions
     ├── public/                  # Static assets
-    │   ├── manifest.json       # Active manifest
+    │   ├── manifest.json       # Active manifest (auto-generated)
     │   ├── manifest.dev.json   # Dev configuration
     │   ├── manifest.prod.json  # Production configuration
-    │   └── content.js          # Content script
+    │   └── content.js          # Built content script
+    ├── scripts/                 # Build and utility scripts
+    │   └── post-build.js       # Post-build processing
     ├── dist/                    # Build output (load this in Chrome)
+    ├── CalAIder-for-judges.zip # Packaged distribution for judges
+    ├── dist.pem                # Extension private key (DO NOT COMMIT)
+    ├── dist.crx                # Packed extension (DO NOT COMMIT)
+    ├── package-for-judges.ps1  # PowerShell packaging script
+    ├── extract-public-key.js   # Extract public key from .pem
     └── package.json            # Dependencies and scripts
 ```
 
@@ -168,10 +176,11 @@ dist/
 #### OAuth / Sign-In Issues
 - **Cause**: Mismatched OAuth client ID or extension ID
 - **Fix**: Verify OAuth client is configured for your extension ID in Google Cloud Console
+- **Note for Judges**: OAuth is published to "In production (unverified)" allowing up to 100 test users
 
 #### AI Model Not Available
 - **Cause**: Chrome Built-in AI not enabled or model not downloaded
-- **Fix**: Enable flags and wait for automatic download
+- **Fix**: Enable flags at `chrome://flags` and wait for automatic download from `chrome://components`
 
 ### Debug Tools
 
@@ -180,13 +189,39 @@ The extension includes a built-in debug panel:
 2. Click the debug icon
 3. View extraction logs, model status, and cached data
 
+---
 
+## 🏆 For Judges - Quick Start
 
+### Installation from Package
+1. Extract `CalAIder-for-judges.zip`
+2. Load `dist/` folder as unpacked extension
+3. Enable Chrome Built-in AI flags
+4. Sign in and test on event-rich websites
+
+### Packaging the Extension
+```powershell
+# Windows PowerShell
+.\package-for-judges.ps1
+
+# Manually
+npm run build:dev
+# Zip the dist/ folder
+```
+
+### Key Evaluation Features
+- **On-device AI**: All event extraction happens locally via Gemini Nano
+- **Privacy-first**: Zero external AI API calls during extraction
+- **Smart extraction**: Multi-stage (structured data → AI fallback)
+- **Real-time processing**: Instant event detection as you browse
+
+---
 
 ## Additional Resources
 
 - [Chrome Extension Documentation](https://developer.chrome.com/docs/extensions/)
 - [Chrome Built-in AI API](https://developer.chrome.com/docs/ai/built-in)
+- [CalAIder Privacy Policy](https://kwabena-manu.github.io/CalAIder/privacy-policy.html)
 - [Google Calendar API](https://developers.google.com/calendar/api)
 - [Material-UI Documentation](https://mui.com/)
 

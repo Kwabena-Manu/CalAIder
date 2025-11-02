@@ -8,7 +8,7 @@ The frontend implementation of CalAIder - an intelligent Chrome extension that u
 
 ---
 
-## 🏗️ Architecture Overview
+##  Architecture Overview
 
 This Chrome extension is built with **React 19** and **Vite**, leveraging modern web technologies and Chrome's experimental Built-in AI API.
 
@@ -56,9 +56,14 @@ CalAIder-frontend/
 │   ├── content/                    # Content script
 │   │   └── content.js             # Page analysis script
 │   │
+│   ├── assets/                     # Static assets
+│   │   └── css/                    # Stylesheets
+│   │       └── styles.css
+│   │
 │   ├── background.js               # Service worker
 │   ├── App.jsx                     # Root component
 │   ├── main.jsx                    # Entry point
+│   ├── App.css                     # App styles
 │   └── index.css                   # Global styles
 │
 ├── public/                         # Static assets
@@ -70,7 +75,15 @@ CalAIder-frontend/
 ├── dist/                           # Build output (load in Chrome)
 ├── scripts/                        # Build scripts
 │   └── post-build.js              # Post-build processing
+│
+├── CalAIder-for-judges.zip        # Packaged distribution
+├── dist.pem                        # Extension private key (NOT COMMITTED)
+├── dist.crx                        # Packed extension (NOT COMMITTED)
+├── package-for-judges.ps1          # PowerShell packaging script
+├── extract-public-key.js           # Public key extraction utility
+│
 ├── vite.config.js                 # Vite configuration
+├── eslint.config.js               # ESLint configuration
 ├── package.json                   # Dependencies
 └── README.md                      # This file
 ```
@@ -399,6 +412,93 @@ See [PUBLISHING_GUIDE.md](../../PUBLISHING_GUIDE.md) for complete instructions.
 
 ---
 
+## 🏆 For Judges - Technical Deep Dive
+
+### Chrome Built-in AI Architecture
+
+**CalAIder demonstrates advanced integration of Chrome's Gemini Nano via the Prompt API.**
+
+#### AI Session Management (`src/services/eventExtraction.js`)
+
+```javascript
+// Session caching for performance
+let cachedSession = null;
+
+async function getSession() {
+  if (cachedSession) return cachedSession;
+  
+  // Capability check
+  const { available, defaultTemperature, defaultTopK } = 
+    await window.ai.languageModel.capabilities();
+  
+  if (available !== "readily") {
+    throw new Error("Model not available");
+  }
+  
+  // Create session with system prompt
+  cachedSession = await window.ai.languageModel.create({
+    systemPrompt: SYSTEM_PROMPT,
+    temperature: 0.3,
+    topK: 3
+  });
+  
+  return cachedSession;
+}
+```
+
+#### Model Prewarming (`src/background.js`)
+
+```javascript
+// Background service worker prewarms model on install
+chrome.runtime.onInstalled.addListener(() => {
+  tryPrewarmBackground();
+});
+
+async function tryPrewarmBackground() {
+  // Lazy-load AI service only when needed
+  const { prewarmModel } = await import('./services/eventExtraction.js');
+  await prewarmModel();
+}
+```
+
+#### Prompt Engineering Strategy
+
+**System Prompt**: Instructs Gemini Nano to extract structured event data
+**Schema Validation**: AI output validated against strict JSON schema
+**Past Date Correction**: Intelligent year adjustment for historical dates
+**Fallback Logic**: Graceful degradation to structured data extraction
+
+#### Key Evaluation Points
+
+1. **On-Device Processing**: 100% local - verify with Chrome DevTools Network tab (zero AI-related network requests)
+2. **Session Persistence**: Model session cached across page navigations for instant responses
+3. **Error Handling**: Download progress monitoring, capability checks, session recovery
+4. **Privacy**: Event details never transmitted off-device during AI extraction
+
+### Technical Highlights for Evaluation
+
+- **Manifest V3 Best Practices**: Service worker architecture, dynamic content script injection
+- **React 19 Patterns**: Modern hooks, context providers, suspense-ready
+- **Vite Multi-Entry Build**: Separate bundles for popup, background, content scripts
+- **Material-UI Integration**: Professional UI with accessibility features
+- **OAuth 2.0 Flow**: Chrome Identity API with token refresh and revocation
+
+### Demo Recommendations
+
+1. **Network Inspection**: Open DevTools → Network, extract events, observe zero AI API calls
+2. **Model Status**: Check `chrome://components` for Gemini Nano version
+3. **Performance**: Measure time-to-extraction with cached vs. fresh sessions
+4. **Fallback Testing**: Disable AI flags, verify structured data extraction still works
+
+### Files to Review
+
+- `src/services/eventExtraction.js` - Core AI integration (180 lines)
+- `src/background.js` - Service worker with prewarming (220 lines)
+- `public/content.js` - Multi-stage extraction (350 lines)
+- `src/context/GoogleAPIContext.jsx` - OAuth & Calendar API (380 lines)
+
+---
+
 ## 📚 Additional Documentation
 
 - [Main README](../../README.md) - Project overview
@@ -406,6 +506,7 @@ See [PUBLISHING_GUIDE.md](../../PUBLISHING_GUIDE.md) for complete instructions.
 - [Manifest Guide](../../MANIFEST_GUIDE.md) - OAuth configuration
 - [Publishing Guide](../../PUBLISHING_GUIDE.md) - Chrome Web Store deployment
 - [Security Analysis](../../SECURITY_ANALYSIS.md) - Security audit
+- [Privacy Policy](../../privacy-policy.html) - CCPA-compliant privacy policy
 
 ---
 

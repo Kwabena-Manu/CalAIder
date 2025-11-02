@@ -67,11 +67,16 @@ CalAIder/
 ├── ai_service/                    # AI service utilities
 ├── promptAPI/                     # Prompt API experimentation
 ├── extension/                     # Legacy extension files
-├── docs/                          # Documentation and images
-│   └── images/                    # Screenshots and assets
-├── SECURITY_ANALYSIS.md           # Security audit report
-├── MANIFEST_GUIDE.md              # Manifest configuration guide
-├── PUBLISHING_GUIDE.md            # Chrome Web Store publishing guide
+├── images/                        # Extension icons and screenshots
+│   ├── CalAIder-128.png          # Extension icon (128x128)
+│   ├── CalAIder-48.png           # Extension icon (48x48)
+│   ├── CalAIder-16.png           # Extension icon (16x16)
+│   └── *.png                      # UI screenshots
+├── index.html                     # Project landing page
+├── privacy-policy.html            # Privacy policy (Chrome Web Store requirement)
+├── requirements.txt               # Python dependencies
+├── UPDATES_SUMMARY.md             # Recent documentation updates
+├── LICENSE                        # MIT License
 └── README.md                      # This file
 ```
 
@@ -111,7 +116,68 @@ CalAIder/
 
 5. **Configure Google OAuth** (if not using existing dev client)
    
-<!-- ![Installation Steps](./docs/images/installation.png) Add screenshot of Chrome extensions page -->
+<!-- ![Installation Steps](./images/installation.png) Add screenshot of Chrome extensions page -->
+
+---
+
+## 🏆 For Judges - Google Chrome Built-in AI Challenge 2025
+
+### Quick Evaluation Setup
+
+**CalAIder showcases Chrome's Built-in AI (Gemini Nano) for privacy-focused, on-device event extraction.**
+
+#### Installation (2 minutes)
+1. Download and unzip `CalAIder-for-judges.zip` (or build from source)
+2. Open Chrome → `chrome://extensions`
+3. Enable **Developer mode**
+4. Click **Load unpacked** → Select `dist/` folder
+5. Sign in with Google when prompted
+
+#### Chrome Built-in AI Setup
+1. Navigate to `chrome://flags`
+2. Search for **"Prompt API for Gemini Nano"**
+3. Enable and restart Chrome
+4. Gemini Nano downloads automatically (may take a few minutes)
+
+#### Demo Scenarios
+Try these event-rich pages to see AI extraction in action:
+- **Eventbrite.com** - Conference and workshop pages
+- **Meetup.com** - Local events and gatherings
+- **University event calendars** - Academic schedules
+- **Concert/festival websites** - Entertainment events
+
+### What Makes CalAIder Special for This Challenge
+
+#### 🤖 Chrome Built-in AI Integration
+- **Gemini Nano (Prompt API)**: 100% on-device event extraction - no external AI APIs
+- **Session Management**: Intelligent model warmup and caching for instant responses
+- **Prompt Engineering**: Custom system prompts extract structured event data from unstructured web content
+- **Privacy First**: All AI processing happens locally - event details never leave the device
+
+#### 🎯 Key Evaluation Points
+1. **AI Innovation**: Multi-stage extraction (structured data → AI fallback) maximizes accuracy
+2. **Privacy & Security**: Local AI processing + minimal permissions (Google Calendar only)
+3. **User Experience**: One-click event detection with real-time AI feedback
+4. **Technical Excellence**: React 19 + Manifest V3 + Prompt API best practices
+
+#### 📊 Technical Implementation
+- **Model Prewarming**: Background service prewarms Gemini Nano for instant first-use
+- **Graceful Degradation**: Falls back to structured data if AI unavailable
+- **Schema Validation**: AI output validated against strict event schema
+- **Error Handling**: Download progress monitoring, capability checks, session recovery
+
+### Testing Checklist
+- [ ] Extension loads without errors
+- [ ] Google OAuth sign-in works
+- [ ] AI model downloads/initializes (check `chrome://components`)
+- [ ] Events detected automatically on supported pages
+- [ ] Popup displays extracted events with AI-generated details
+- [ ] "Add to Calendar" creates events in Google Calendar
+- [ ] Privacy: No network requests during AI extraction (check DevTools Network tab)
+
+### Support During Evaluation
+- **GitHub**: [Issues & Discussions](https://github.com/Kwabena-Manu/CalAIder)
+- **Privacy Policy**: [View Policy](https://kwabena-manu.github.io/CalAIder/privacy-policy.html)
 
 ---
 
@@ -123,7 +189,7 @@ CalAIder/
 4. **Review**: Open the popup to see detected events
 5. **Add**: Click "Add to Calendar" to sync events with Google Calendar
 
-<!-- ![Usage Flow](./docs/images/usage-flow.png) Add screenshot showing the workflow -->
+<!-- ![Usage Flow](./images/usage-flow.png) Add screenshot showing the workflow -->
 
 ---
 
@@ -147,14 +213,7 @@ CalAIder/
 
 ---
 
-##  Documentation
 
-- [Security Analysis](./SECURITY_ANALYSIS.md) - Comprehensive security audit
-- [Manifest Configuration Guide](./MANIFEST_GUIDE.md) - Setup for dev/prod environments
-- [Publishing Guide](./PUBLISHING_GUIDE.md) - Chrome Web Store deployment
-- [Frontend README](./frontend/README.md) - Extension-specific documentation
-
----
 
 ##  Development
 
@@ -172,13 +231,18 @@ npm run dev
 
 # Lint code
 npm run lint
+
+# Package extension for judges (Windows PowerShell)
+cd frontend/CalAIder-frontend
+.\package-for-judges.ps1
 ```
 
-### Project Structure
+### Distribution Files
 
-See detailed documentation in:
-- [Frontend Architecture](./frontend/CalAIder-frontend/README.md)
-- [Service Layer Documentation](./frontend/CalAIder-frontend/src/services/README.md)
+The `frontend/CalAIder-frontend/` directory contains:
+- `CalAIder-for-judges.zip` - Ready-to-distribute package with instructions
+- `extract-public-key.js` - Utility to extract public key from .pem file for stable extension ID
+- `package-for-judges.ps1` - PowerShell script to build and package extension
 
 ---
 
